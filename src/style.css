@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sf-bg: #0A0A0C;
+  --sf-text: #E5E7EB;
+  --sf-border: #27272A;
+  --sf-blue: #3B82F6;
+  --sf-mint: #10B981;
+  --sf-violet: #8B5CF6;
+  --sf-error: #EF4444;
+  --sf-warning: #F59E0B;
+}

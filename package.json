@@ -1,0 +1,55 @@
+{
+  "name": "specforge",
+  "displayName": "SpecForge",
+  "version": "0.0.1",
+  "description": "AI-powered QA engineering extension for Azure DevOps",
+  "scripts": {
+    "dev": "plasmo dev",
+    "build": "plasmo build",
+    "build:chrome": "plasmo build",
+    "build:firefox": "plasmo build --target=firefox-mv2",
+    "build:edge": "plasmo build --target=edge-mv3",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "plasmo": "0.90.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "zod": "^3.22.4",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@plasmohq/prettier-plugin-sort-imports": "4.0.1",
+    "@playwright/test": "^1.41.1",
+    "@types/chrome": "^0.0.258",
+    "@types/node": "20.11.5",
+    "@types/react": "18.2.48",
+    "@types/react-dom": "18.2.18",
+    "@typescript-eslint/eslint-plugin": "6.19.0",
+    "@typescript-eslint/parser": "6.19.0",
+    "@vitest/coverage-v8": "^1.2.0",
+    "autoprefixer": "^10.4.17",
+    "jsdom": "^24.0.0",
+    "playwright": "^1.41.1",
+    "postcss": "^8.4.33",
+    "prettier": "3.2.4",
+    "tailwindcss": "^3.4.1",
+    "typescript": "5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "manifest": {
+    "host_permissions": [
+      "https://dev.azure.com/*",
+      "https://api.anthropic.com/*"
+    ],
+    "permissions": [
+      "storage",
+      "sidePanel",
+      "scripting",
+      "activeTab"
+    ]
+  }
+}
