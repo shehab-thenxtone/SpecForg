@@ -1,2 +1,1 @@
-// Phase 1 implementation: DOM field extraction
-export {}
+export { extractFullStory } from '~/services/ado/extractor'
