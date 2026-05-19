@@ -95,7 +95,7 @@ export function validateGeneratedOutput(raw: unknown): ValidationResult {
   for (let i = 0; i < parsed.length; i++) {
     const result = TestCaseSchema.safeParse(parsed[i])
     if (result.success) {
-      validItems.push(result.data)
+      validItems.push(result.data as unknown as ValidatedTestCase)
     } else {
       for (const issue of result.error.issues) {
         zodErrors.push({

@@ -1,14 +1,19 @@
 import '../style.css'
+import { Settings } from './Settings'
 
-function Popup() {
+export default function Popup() {
   return (
     <div
-      style={{ width: 320, minHeight: 200, padding: 16 }}
-      className="bg-sf-bg text-sf-text">
-      <h1 className="text-lg font-semibold">SpecForge</h1>
-      <p className="text-sm text-gray-400">Settings coming in Phase 3</p>
+      className="bg-sf-bg text-sf-text"
+      style={{ width: 360, minHeight: 480, padding: 16 }}
+    >
+      <header className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <span className="text-sf-blue font-bold text-base">SpecForge</span>
+        </div>
+        <span className="text-xs text-zinc-600">Settings</span>
+      </header>
+      <Settings />
     </div>
   )
 }
-
-export default Popup

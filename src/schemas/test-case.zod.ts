@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { GeneratedTestCase } from '~/types/test-case'
 
 export const StepSchema = z.object({
   action: z.string().min(1, 'Step action cannot be empty'),
@@ -17,4 +18,5 @@ export const TestCaseSchema = z.object({
 
 export const GeneratedOutputSchema = z.array(TestCaseSchema).min(1, 'At least one test case is required')
 
-export type ValidatedTestCase = z.infer<typeof TestCaseSchema>
+// z.infer produces optional fields under strict:false; use the authoritative hand-written type
+export type ValidatedTestCase = GeneratedTestCase
