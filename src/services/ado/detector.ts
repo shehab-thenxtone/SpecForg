@@ -1,5 +1,6 @@
 import { debounce } from '~/utils/dom-wait'
 import { safeLog } from '~/utils/safe-log'
+import { ADO_SELECTORS } from './selectors'
 
 export const SUPPORTED_TYPES = new Set([
   'User Story',
@@ -8,19 +9,17 @@ export const SUPPORTED_TYPES = new Set([
   'Requirement',
 ])
 
-const TYPE_BADGE_SELECTOR = '[aria-label="Work item type"]'
-const TITLE_FIELD_SELECTOR = '[aria-label="Title field"]'
 const DETECTION_DEBOUNCE_MS = 300
 
 function resolveWorkItemType(): string | null {
-  const badge = document.querySelector(TYPE_BADGE_SELECTOR)
+  const badge = document.querySelector(ADO_SELECTORS.WORK_ITEM_TYPE_BADGE)
   if (!badge) return null
   return badge.textContent?.trim() ?? null
 }
 
 export function isAdoWorkItemPage(): boolean {
-  const hasBadge = document.querySelector(TYPE_BADGE_SELECTOR) !== null
-  const hasTitle = document.querySelector(TITLE_FIELD_SELECTOR) !== null
+  const hasBadge = document.querySelector(ADO_SELECTORS.WORK_ITEM_TYPE_BADGE) !== null
+  const hasTitle = document.querySelector(ADO_SELECTORS.TITLE_FIELD) !== null
   return hasBadge && hasTitle
 }
 

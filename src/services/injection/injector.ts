@@ -3,13 +3,16 @@ import type { InjectionProgress, InjectionSummary } from '~/types/messages'
 import { waitForElement } from '~/utils/dom-wait'
 import { injectAllSteps } from './steps-grid'
 import { safeLog } from '~/utils/safe-log'
+import { SpecForgeError, ERROR_CODES } from '~/utils/errors'
+import { perfMark, perfMeasure, logPerfMetric } from '~/utils/perf'
+import { ADO_SELECTORS } from '~/services/ado/selectors'
 
-export class InjectionError extends Error {
+export class InjectionError extends SpecForgeError {
   constructor(
     public readonly step: string,
     public readonly reason: string
   ) {
-    super(`Injection failed at "${step}": ${reason}`)
+    super(ERROR_CODES.INJECTION_FAILED, `Injection failed at "${step}": ${reason}`)
     this.name = 'InjectionError'
   }
 }
@@ -74,6 +77,8 @@ export async function injectTestCase(
   parentStoryId: string,
   onProgress?: (step: string) => void
 ): Promise<{ adoId: string }> {
+  perfMark('inject:start')
+
   const report = (step: string): void => {
     onProgress?.(step)
     safeLog.info('Injection step:', step)
@@ -87,15 +92,15 @@ export async function injectTestCase(
 
   // 2. Wait for form to load
   report('Waiting for form')
-  await retryOperation(() => waitForElement('[aria-label="Title field"]'))
+  await retryOperation(() => waitForElement(ADO_SELECTORS.TITLE_FIELD))
 
   // 3. Fill title
   report('Filling title')
-  await retryOperation(() => fillField('[aria-label="Title field"]', testCase.title))
+  await retryOperation(() => fillField(ADO_SELECTORS.TITLE_FIELD, testCase.title))
 
   // 4. Set priority
   report('Setting priority')
-  await retryOperation(() => selectOption('[aria-label="Priority"]', testCase.priority)).catch(() => {
+  await retryOperation(() => selectOption(ADO_SELECTORS.PRIORITY, testCase.priority)).catch(() => {
     safeLog.warn('Priority field not found, skipping')
   })
 
@@ -103,7 +108,7 @@ export async function injectTestCase(
   if (testCase.tags.length > 0) {
     report('Adding tags')
     await retryOperation(async () => {
-      const tagsInput = await waitForElement('[aria-label="Tags"]')
+      const tagsInput = await waitForElement(ADO_SELECTORS.TAGS_INPUT)
       if (tagsInput instanceof HTMLInputElement) {
         for (const tag of testCase.tags) {
           tagsInput.value = tag
@@ -122,25 +127,28 @@ export async function injectTestCase(
   if (parentStoryId) {
     report('Linking to parent story')
     await retryOperation(async () => {
-      await clickEl('[aria-label="Add link"]')
-      const linkType = await waitForElement('[aria-label="Link type"]')
+      await clickEl(ADO_SELECTORS.ADD_LINK)
+      const linkType = await waitForElement(ADO_SELECTORS.LINK_DIALOG_TYPE)
       if (linkType instanceof HTMLSelectElement) {
         linkType.value = 'Tested By'
         linkType.dispatchEvent(new Event('change', { bubbles: true }))
       }
-      await fillField('[aria-label="Work item ID"]', parentStoryId)
-      await clickEl('[aria-label="OK"]')
+      await fillField(ADO_SELECTORS.WORK_ITEM_ID, parentStoryId)
+      await clickEl(ADO_SELECTORS.LINK_DIALOG_OK)
     }).catch(() => safeLog.warn('Parent linking failed, skipping'))
   }
 
   // 8. Save
   report('Saving')
-  await retryOperation(() => clickEl('[aria-label="Save work item"]'))
+  await retryOperation(() => clickEl(ADO_SELECTORS.SAVE_WORK_ITEM))
 
   // 9. Confirm saved ID
   report('Confirming save')
-  await waitForElement('[aria-label*="Work item"]').catch(() => {})
+  await waitForElement(ADO_SELECTORS.CONFIRM_SAVED).catch(() => {})
   const adoId = extractAdoIdFromUrl(window.location.href) ?? 'unknown'
+
+  perfMark('inject:end')
+  logPerfMetric('injectTestCase', perfMeasure('injection', 'inject:start', 'inject:end'))
 
   return { adoId }
 }

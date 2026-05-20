@@ -3,6 +3,7 @@ import type { ValidatedTestCase } from '~/schemas/test-case.zod'
 import { runPromptChain } from '~/services/claude/client'
 import { getClaudeApiKey } from '~/storage/storage'
 import { safeLog } from '~/utils/safe-log'
+import { browserAPI } from '~/utils/browser-api'
 import type { Message } from '~/types/messages'
 
 type SendResponse = (response: Message) => void
@@ -40,15 +41,15 @@ async function handleGenerateTestCases(story: UserStory, sendResponse: SendRespo
 }
 
 async function forwardToActiveTab(message: Message): Promise<void> {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+  const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true })
   const tabId = tabs[0]?.id
   if (tabId) {
-    chrome.tabs.sendMessage(tabId, message)
+    browserAPI.tabs.sendMessage(tabId, message)
   }
 }
 
 export function setupMessageRouter(): void {
-  chrome.runtime.onMessage.addListener(
+  browserAPI.runtime.onMessage.addListener(
     (message: Message, sender: MessageSender, sendResponse: SendResponse) => {
       if (message.type === 'GENERATE_TEST_CASES') {
         void handleGenerateTestCases(message.payload, sendResponse)
@@ -68,7 +69,7 @@ export function setupMessageRouter(): void {
       if (message.type === 'OPEN_SIDE_PANEL') {
         const tabId = sender.tab?.id
         if (tabId) {
-          void chrome.sidePanel.open({ tabId })
+          void browserAPI.sidePanel.open({ tabId })
         }
         return false
       }

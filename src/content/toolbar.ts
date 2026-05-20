@@ -1,12 +1,14 @@
+import { ADO_SELECTORS } from '~/services/ado/selectors'
+
 const TOOLBAR_BTN_ATTR = 'data-specforge'
 const TOOLBAR_BTN_VALUE = 'toolbar-btn'
 const TOOLBAR_BTN_SELECTOR = `[${TOOLBAR_BTN_ATTR}="${TOOLBAR_BTN_VALUE}"]`
 
 function findToolbarContainer(): Element | null {
   return (
-    document.querySelector('[role="toolbar"]') ??
-    document.querySelector('[aria-label="Toolbar"]') ??
-    document.querySelector('[aria-label="work item actions toolbar"]') ??
+    document.querySelector(ADO_SELECTORS.TOOLBAR_ROLE) ??
+    document.querySelector(ADO_SELECTORS.TOOLBAR_ARIA) ??
+    document.querySelector(ADO_SELECTORS.TOOLBAR_ACTIONS) ??
     null
   )
 }

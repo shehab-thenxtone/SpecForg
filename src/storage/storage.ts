@@ -1,3 +1,5 @@
+import { browserAPI } from '~/utils/browser-api'
+
 export interface UserPreferences {
   defaultPriority: 'Low' | 'Medium' | 'High'
   autoSelectAll: boolean
@@ -14,7 +16,7 @@ type StorageKey = 'claudeApiKey' | 'adoPat' | 'userPreferences'
 
 function get<T>(key: StorageKey): Promise<T | null> {
   return new Promise(resolve => {
-    chrome.storage.local.get(key, result => {
+    browserAPI.storage.local.get(key, result => {
       resolve(key in result ? (result[key] as T) : null)
     })
   })
@@ -22,7 +24,7 @@ function get<T>(key: StorageKey): Promise<T | null> {
 
 function set(key: StorageKey, value: unknown): Promise<void> {
   return new Promise(resolve => {
-    chrome.storage.local.set({ [key]: value }, resolve)
+    browserAPI.storage.local.set({ [key]: value }, resolve)
   })
 }
 
@@ -44,7 +46,7 @@ export function setAdoPat(pat: string): Promise<void> {
 
 export function clearAllCredentials(): Promise<void> {
   return new Promise(resolve => {
-    chrome.storage.local.remove(['claudeApiKey', 'adoPat'], resolve)
+    browserAPI.storage.local.remove(['claudeApiKey', 'adoPat'], resolve)
   })
 }
 

@@ -1,32 +1,33 @@
 import { safeLog } from '~/utils/safe-log'
+import { SpecForgeError, ERROR_CODES } from '~/utils/errors'
+import { ADO_SELECTORS } from '~/services/ado/selectors'
 
-const STEPS_GRID_SELECTOR = '[aria-label="Test steps"]'
 const STEP_ROW_TIMEOUT_MS = 2000
 
-export class StepInjectionError extends Error {
+export class StepInjectionError extends SpecForgeError {
   constructor(
     public readonly stepIndex: number,
     public readonly action: string,
     public readonly expected: string
   ) {
-    super(`Failed to inject step ${stepIndex + 1}: "${action.slice(0, 40)}"`)
+    super(ERROR_CODES.INJECTION_FAILED, `Failed to inject step ${stepIndex + 1}: "${action.slice(0, 40)}"`)
     this.name = 'StepInjectionError'
   }
 }
 
 function getStepsGrid(): Element | null {
-  return document.querySelector(STEPS_GRID_SELECTOR)
+  return document.querySelector(ADO_SELECTORS.STEPS_GRID)
 }
 
 export function getStepRow(rowIndex: number): Element | null {
   const grid = getStepsGrid()
   if (!grid) return null
-  const rows = grid.querySelectorAll('[role="row"]')
+  const rows = grid.querySelectorAll(ADO_SELECTORS.STEP_ROW)
   return (rows[rowIndex] as Element | undefined) ?? null
 }
 
 function getCells(row: Element): { action: HTMLElement | null; expected: HTMLElement | null } {
-  const cells = row.querySelectorAll('[role="gridcell"]')
+  const cells = row.querySelectorAll(ADO_SELECTORS.GRID_CELL)
   return {
     action: (cells[0] as HTMLElement | undefined) ?? null,
     expected: (cells[1] as HTMLElement | undefined) ?? null,
