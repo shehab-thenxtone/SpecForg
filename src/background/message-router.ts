@@ -6,6 +6,7 @@ import { safeLog } from '~/utils/safe-log'
 import type { Message } from '~/types/messages'
 
 type SendResponse = (response: Message) => void
+type MessageSender = chrome.runtime.MessageSender
 
 async function handleGenerateTestCases(story: UserStory, sendResponse: SendResponse): Promise<void> {
   try {
@@ -38,13 +39,40 @@ async function handleGenerateTestCases(story: UserStory, sendResponse: SendRespo
   }
 }
 
+async function forwardToActiveTab(message: Message): Promise<void> {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true })
+  const tabId = tabs[0]?.id
+  if (tabId) {
+    chrome.tabs.sendMessage(tabId, message)
+  }
+}
+
 export function setupMessageRouter(): void {
   chrome.runtime.onMessage.addListener(
-    (message: Message, _sender, sendResponse: SendResponse) => {
+    (message: Message, sender: MessageSender, sendResponse: SendResponse) => {
       if (message.type === 'GENERATE_TEST_CASES') {
         void handleGenerateTestCases(message.payload, sendResponse)
         return true
       }
+
+      if (message.type === 'INJECT_TEST_CASES') {
+        void forwardToActiveTab(message)
+        return false
+      }
+
+      if (message.type === 'INJECTION_PROGRESS' || message.type === 'INJECTION_COMPLETE') {
+        // Side panel receives these directly from the content script via runtime.onMessage.
+        return false
+      }
+
+      if (message.type === 'OPEN_SIDE_PANEL') {
+        const tabId = sender.tab?.id
+        if (tabId) {
+          void chrome.sidePanel.open({ tabId })
+        }
+        return false
+      }
+
       return false
     }
   )

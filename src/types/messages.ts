@@ -27,6 +27,7 @@ export interface InjectionSummary {
 export type Message =
   | { type: 'EXTRACT_STORY' }
   | { type: 'STORY_EXTRACTED'; payload: UserStory }
+  | { type: 'OPEN_SIDE_PANEL' }
   | { type: 'GENERATE_TEST_CASES'; payload: UserStory }
   | { type: 'GENERATION_COMPLETE'; payload: GeneratedTestCase[] }
   | { type: 'INJECT_TEST_CASES'; payload: ValidatedTestCase[] }
