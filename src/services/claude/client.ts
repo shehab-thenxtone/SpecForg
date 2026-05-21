@@ -274,7 +274,7 @@ export async function runPromptChain(
 
   // Final validation
   const result = validateGeneratedOutput(step5Output)
-  if (!result.success) {
+  if (result.success === false) {
     const details = result.errors.map(e => `[${e.caseIndex ?? '?'}] ${e.field}: ${e.message}`).join('; ')
     throw new ClaudeError(`Generated test cases failed validation: ${details}`, 'VALIDATION_ERROR')
   }

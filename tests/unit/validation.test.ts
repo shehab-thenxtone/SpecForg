@@ -91,7 +91,7 @@ describe('validateGeneratedOutput', () => {
   it('returns failure for non-JSON string input', () => {
     const result = validateGeneratedOutput('this is not json at all')
     expect(result.success).toBe(false)
-    if (!result.success) {
+    if (result.success === false) {
       expect(result.errors[0].field).toBe('root')
       expect(result.errors[0].message).toContain('JSON')
     }
@@ -105,7 +105,7 @@ describe('validateGeneratedOutput', () => {
   it('returns failure for non-array JSON', () => {
     const result = validateGeneratedOutput({ title: 'not an array' })
     expect(result.success).toBe(false)
-    if (!result.success) {
+    if (result.success === false) {
       expect(result.errors[0].message).toContain('array')
     }
   })
@@ -119,7 +119,7 @@ describe('validateGeneratedOutput', () => {
     const { title, ...noTitle } = validTestCase
     const result = validateGeneratedOutput([noTitle])
     expect(result.success).toBe(false)
-    if (!result.success) {
+    if (result.success === false) {
       expect(result.errors.some(e => e.field.includes('title') || e.message.toLowerCase().includes('title'))).toBe(true)
     }
   })
@@ -140,7 +140,7 @@ describe('validateGeneratedOutput', () => {
       steps: [{ action: '   ', expected: 'Something' }],
     }])
     expect(result.success).toBe(false)
-    if (!result.success) {
+    if (result.success === false) {
       expect(result.errors.some(e => e.field.includes('action'))).toBe(true)
     }
   })
@@ -175,7 +175,7 @@ describe('validateGeneratedOutput', () => {
       { ...validTestCase, priority: 'Critical' },
     ])
     expect(result.success).toBe(false)
-    if (!result.success) {
+    if (result.success === false) {
       const indexed = result.errors.filter(e => e.caseIndex !== undefined)
       expect(indexed.length).toBeGreaterThan(0)
       expect(indexed[0].caseIndex).toBe(1)

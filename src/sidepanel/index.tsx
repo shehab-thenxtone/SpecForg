@@ -35,11 +35,31 @@ export default function SidePanel() {
   const store = usePanelStore()
   const [showSettings, setShowSettings] = useState(false)
 
+  // On mount, ask the content script for the current work-item type.
+  // This handles the race condition where the side panel opens after the
+  // content script already sent WORK_ITEM_DETECTED (which the panel missed).
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      if (isAdoWorkItemUrl(tabs)) {
-        store.setWorkItemType('User Story')
+      if (!isAdoWorkItemUrl(tabs)) return
+      const tabId = tabs[0]?.id
+      if (!tabId) {
+        store.setWorkItemType('Work Item')
+        return
       }
+      chrome.tabs.sendMessage(
+        tabId,
+        { type: 'QUERY_WORK_ITEM' } satisfies Message,
+        (response: unknown) => {
+          if (chrome.runtime.lastError) {
+            // Content script not yet injected (rare on first load); use generic label.
+            store.setWorkItemType('Work Item')
+            return
+          }
+          const msg = response as { payload?: { workItemType?: string | null } }
+          const workItemType = msg?.payload?.workItemType
+          store.setWorkItemType(workItemType ?? 'Work Item')
+        }
+      )
     })
   }, [])
 
