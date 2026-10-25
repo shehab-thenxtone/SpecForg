@@ -118,6 +118,7 @@ export async function extractFullStory(): Promise<UserStory> {
 
   const story: UserStory = {
     id: extractId(),
+    url: window.location.href,
     title,
     description,
     acceptanceCriteria,

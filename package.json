@@ -40,6 +40,9 @@
     "typescript": "5.3.3",
     "vitest": "^1.2.0"
   },
+  "alias": {
+    "zod": "./node_modules/zod/index.cjs"
+  },
   "manifest": {
     "host_permissions": [
       "https://dev.azure.com/*",

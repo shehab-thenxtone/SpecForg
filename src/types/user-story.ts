@@ -7,6 +7,7 @@ export interface LinkedWorkItem {
 
 export interface UserStory {
   id: string
+  url: string
   title: string
   description: string
   acceptanceCriteria: string

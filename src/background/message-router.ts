@@ -1,7 +1,5 @@
 import type { UserStory } from '~/types/user-story'
-import type { ValidatedTestCase } from '~/schemas/test-case.zod'
-import { runPromptChain } from '~/services/claude/client'
-import { getClaudeApiKey } from '~/storage/storage'
+import { getClaudeProjectUrl, setPendingSkillInvocation, setAutoStart } from '~/storage/storage'
 import { safeLog } from '~/utils/safe-log'
 import { browserAPI } from '~/utils/browser-api'
 import type { Message } from '~/types/messages'
@@ -9,67 +7,71 @@ import type { Message } from '~/types/messages'
 type SendResponse = (response: Message) => void
 type MessageSender = chrome.runtime.MessageSender
 
-async function handleGenerateTestCases(story: UserStory, sendResponse: SendResponse): Promise<void> {
-  try {
-    const apiKey = await getClaudeApiKey()
-    if (!apiKey) {
-      sendResponse({
-        type: 'ERROR',
-        payload: {
-          code: 'UNAUTHORIZED',
-          message: 'Claude API key is not configured. Please set it in the extension settings.',
-        },
-      })
-      return
-    }
+function buildSkillInvocationMessage(story: UserStory): string {
+  const lines: string[] = [`/ado-test-case-creator ${story.url}`, '']
 
-    safeLog.info('Starting prompt chain for story', story.id)
-    const testCases: ValidatedTestCase[] = await runPromptChain(story, apiKey)
+  lines.push('## Work Item Details', '')
+  lines.push(`**ID:** ${story.id}`)
+  lines.push(`**Title:** ${story.title}`)
+  if (story.priority) lines.push(`**Priority:** ${story.priority}`)
+  if (story.areaPath) lines.push(`**Area Path:** ${story.areaPath}`)
+  if (story.iteration) lines.push(`**Iteration:** ${story.iteration}`)
+  if (story.tags.length > 0) lines.push(`**Tags:** ${story.tags.join(', ')}`)
 
-    sendResponse({
-      type: 'GENERATION_COMPLETE',
-      payload: testCases,
-    })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    safeLog.error('Prompt chain failed:', message)
-    sendResponse({
-      type: 'ERROR',
-      payload: { code: 'SERVER_ERROR', message },
-    })
+  if (story.description) {
+    lines.push('', '## Description', '', story.description)
   }
+
+  if (story.acceptanceCriteria) {
+    lines.push('', '## Acceptance Criteria', '', story.acceptanceCriteria)
+  }
+
+  if (story.linkedWorkItems && story.linkedWorkItems.length > 0) {
+    lines.push('', '## Related Work Items', '')
+    for (const item of story.linkedWorkItems) {
+      lines.push(`- **${item.relationship}** | #${item.id} — ${item.title} (${item.type})`)
+    }
+  }
+
+  return lines.join('\n')
 }
 
-async function forwardToActiveTab(message: Message): Promise<void> {
-  const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true })
-  const tabId = tabs[0]?.id
-  if (tabId) {
-    browserAPI.tabs.sendMessage(tabId, message)
+async function handleOpenClaudeWithSkill(story: UserStory, sendResponse: SendResponse): Promise<void> {
+  try {
+    const message = buildSkillInvocationMessage(story)
+    await setPendingSkillInvocation(message)
+
+    const projectUrl = await getClaudeProjectUrl()
+    const targetUrl = projectUrl ?? 'https://claude.ai/new'
+
+    await browserAPI.tabs.create({ url: targetUrl })
+    safeLog.info('Opened Claude.ai tab for skill invocation, story', story.id)
+
+    sendResponse({ type: 'CLAUDE_TAB_OPENED' } satisfies Message)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    safeLog.error('Failed to open Claude.ai:', msg)
+    sendResponse({ type: 'ERROR', payload: { code: 'SERVER_ERROR', message: msg } })
   }
 }
 
 export function setupMessageRouter(): void {
   browserAPI.runtime.onMessage.addListener(
     (message: Message, sender: MessageSender, sendResponse: SendResponse) => {
-      if (message.type === 'GENERATE_TEST_CASES') {
-        void handleGenerateTestCases(message.payload, sendResponse)
+      if (message.type === 'OPEN_CLAUDE_WITH_SKILL') {
+        void handleOpenClaudeWithSkill(message.payload, sendResponse)
         return true
       }
 
-      if (message.type === 'INJECT_TEST_CASES') {
-        void forwardToActiveTab(message)
-        return false
-      }
-
-      if (message.type === 'INJECTION_PROGRESS' || message.type === 'INJECTION_COMPLETE') {
-        // Side panel receives these directly from the content script via runtime.onMessage.
-        return false
-      }
-
       if (message.type === 'OPEN_SIDE_PANEL') {
-        const tabId = sender.tab?.id
+        const tabId = message.payload?.tabId ?? sender.tab?.id
         if (tabId) {
+          // sidePanel.open() MUST be called synchronously within the user-gesture
+          // handler — putting it inside a .then() breaks the gesture chain.
           void browserAPI.sidePanel.open({ tabId })
+          if (message.payload?.autoStart) {
+            void setAutoStart()
+          }
         }
         return false
       }
